@@ -1,4 +1,5 @@
 import { For, Show, Suspense, createEffect, createMemo, createSignal, lazy, onCleanup, onMount } from "solid-js";
+import { useTranslation } from "solid-i18next";
 import { Command } from "lucide-solid";
 import {
   coreGetConflicts,
@@ -14,9 +15,7 @@ import {
 import { useTheme } from "./app/providers/theme";
 import { subscribeDomainEvents } from "./shared/events/subscriptions";
 import { css, cx } from "./styled-system/css";
-import type { TabsValueChangeDetails } from "@ark-ui/solid/tabs";
-import { UiTabsContent, UiTabsList, UiTabsRoot, UiTabsTrigger } from "./shared/ui/ark";
-import { UiBadge, UiPanel, UiSideNavItem, UiStatusBar } from "./shared/ui/primitives";
+import { UiPanel, UiSideNavItem, UiStatusBar } from "./shared/ui/primitives";
 import { navIcons, type NavIconName } from "./shared/ui/icons";
 import { ThemeSwitchButton, SidebarCollapseButton } from "./features";
 import { ProfileBadge } from "./entities";
@@ -27,6 +26,7 @@ const ProfilesPage = lazy(() => import("./pages/profiles/ui/ProfilesPage").then(
 const ModsPage = lazy(() => import("./pages/mods/ui/ModsPage").then((m) => ({ default: m.ModsPage })));
 const ConflictsPage = lazy(() => import("./pages/conflicts/ui/ConflictsPage").then((m) => ({ default: m.ConflictsPage })));
 const OperationsPage = lazy(() => import("./pages/operations/ui/OperationsPage").then((m) => ({ default: m.OperationsPage })));
+const SettingsPage = lazy(() => import("./pages/settings/ui/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 
 const appShellClass = css({
   display: "grid",
@@ -90,26 +90,6 @@ const navClass = css({
 
 const navCollapsedClass = css({
   alignItems: "center",
-});
-
-const pageTitleClass = css({
-  m: "0 0 2",
-  fontSize: "sm",
-  fontWeight: "semibold",
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  color: "text.muted",
-});
-
-const settingsTextClass = css({
-  m: "0",
-  color: "text.secondary",
-});
-
-const settingsListClass = css({
-  display: "grid",
-  gap: "3",
-  mt: "4",
 });
 
 const appShellCollapsedClass = css({
@@ -235,17 +215,18 @@ const contentHeaderMetaClass = css({
   fontSize: "sm",
 });
 
-const navItems: Array<{ page: AppPage; label: string; icon: NavIconName; testId: string }> = [
-  { page: "game-overview", label: "Game Overview", icon: "overview", testId: "nav.overview" },
-  { page: "profiles", label: "Profiles", icon: "profiles", testId: "nav.profiles" },
-  { page: "mods", label: "Mods", icon: "mods", testId: "nav.mods" },
-  { page: "conflicts", label: "Conflicts", icon: "conflicts", testId: "nav.conflicts" },
-  { page: "operations", label: "Operation Log", icon: "operations", testId: "nav.operations" },
-  { page: "settings", label: "Настройки", icon: "settings", testId: "nav.settings" },
+const navItems: Array<{ page: AppPage; key: string; icon: NavIconName; testId: string }> = [
+  { page: "game-overview", key: "gameOverview", icon: "overview", testId: "nav.overview" },
+  { page: "profiles", key: "profiles", icon: "profiles", testId: "nav.profiles" },
+  { page: "mods", key: "mods", icon: "mods", testId: "nav.mods" },
+  { page: "conflicts", key: "conflicts", icon: "conflicts", testId: "nav.conflicts" },
+  { page: "operations", key: "operations", icon: "operations", testId: "nav.operations" },
+  { page: "settings", key: "settings", icon: "settings", testId: "nav.settings" },
 ];
 
 function App() {
-  const { theme, setTheme } = useTheme();
+  const [t] = useTranslation(["common", "navigation", "pages"]);
+  const { theme } = useTheme();
   const [activePage, setActivePage] = createSignal<AppPage>("mods");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = createSignal(false);
   const [activeGameId] = createSignal("pilot-game");
@@ -294,13 +275,13 @@ function App() {
         }),
       );
       // Command envelope is validated through unwrap helpers in loaders.
-      appendLog("Мод установлен");
+      appendLog(t("pages:logModInstalled"));
       setModArchivePath("");
       await Promise.all([loadMods(), loadConflicts()]);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Ошибка установки";
+      const message = error instanceof Error ? error.message : t("pages:installErrorFallback");
       setLastError(message);
-      appendLog(`Ошибка установки: ${message}`);
+      appendLog(t("pages:logInstallErrorPrefix", { message }));
     } finally {
       setInstalling(false);
     }
@@ -318,12 +299,12 @@ function App() {
         enabled: !item.enabled,
         }),
       );
-      appendLog(`Состояние мода "${item.name}" обновлено`);
+      appendLog(t("pages:logModStateUpdated", { name: item.name }));
       await Promise.all([loadMods(), loadConflicts()]);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Ошибка изменения состояния мода";
+      const message = error instanceof Error ? error.message : t("pages:stateErrorFallback");
       setLastError(message);
-      appendLog(`Ошибка изменения состояния: ${message}`);
+      appendLog(t("pages:logStateErrorPrefix", { message }));
     } finally {
       setTogglingModId(null);
     }
@@ -340,12 +321,12 @@ function App() {
           modId: item.id,
         }),
       );
-      appendLog(`Мод "${item.name}" удален`);
+      appendLog(t("pages:logModRemoved", { name: item.name }));
       await Promise.all([loadMods(), loadConflicts()]);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Ошибка удаления";
+      const message = error instanceof Error ? error.message : t("pages:removeErrorFallback");
       setLastError(message);
-      appendLog(`Ошибка удаления: ${message}`);
+      appendLog(t("pages:logRemoveErrorPrefix", { message }));
     } finally {
       setRemovingModId(null);
     }
@@ -365,12 +346,12 @@ function App() {
         }),
       );
       setActiveProfileId(targetProfile);
-      appendLog("Профиль переключен");
+      appendLog(t("pages:logProfileSwitched"));
       await Promise.all([loadMods(), loadConflicts()]);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Ошибка переключения профиля";
+      const message = error instanceof Error ? error.message : t("pages:profileSwitchErrorFallback");
       setLastError(message);
-      appendLog(`Ошибка профиля: ${message}`);
+      appendLog(t("pages:logProfileErrorPrefix", { message }));
     } finally {
       setSwitchingProfile(false);
     }
@@ -395,17 +376,17 @@ function App() {
   return (
     <main class={cx(appShellClass, isSidebarCollapsed() ? appShellCollapsedClass : "")} id="main-content">
       <a class={skipLinkClass} href="#content">
-        Перейти к контенту
+        {t("common:skipToContent")}
       </a>
 
-      <aside class={cx(sidebarClass, isSidebarCollapsed() ? sidebarCollapsedClass : "")} aria-label="Основная навигация">
+      <aside class={cx(sidebarClass, isSidebarCollapsed() ? sidebarCollapsedClass : "")} aria-label={t("navigation:mainNavigationAria")}>
         <div class={cx(sidebarHeaderClass, isSidebarCollapsed() ? sidebarHeaderCollapsedClass : "")}>
           <div class={cx(sidebarBrandClass, isSidebarCollapsed() ? sidebarBrandCollapsedClass : "")}>
             <span class={iconWrapClass} aria-hidden="true">
               <Command size={16} strokeWidth={1.8} />
             </span>
             <Show when={!isSidebarCollapsed()}>
-              <h1 class={sidebarTitleClass}>JB Mod Manager</h1>
+              <h1 class={sidebarTitleClass}>{t("common:appName")}</h1>
             </Show>
           </div>
         </div>
@@ -416,7 +397,7 @@ function App() {
                 active={activePage() === item.page}
                 collapsed={isSidebarCollapsed()}
                 data-testid={item.testId}
-                aria-label={item.label}
+                aria-label={t(`navigation:${item.key}`)}
                 onClick={() => setActivePage(item.page)}
               >
                 <span class={iconWrapClass} aria-hidden="true">
@@ -426,10 +407,10 @@ function App() {
                   })()}
                 </span>
                 <Show when={isSidebarCollapsed()}>
-                  <span class={visuallyHiddenClass}>{item.label}</span>
+                  <span class={visuallyHiddenClass}>{t(`navigation:${item.key}`)}</span>
                 </Show>
                 <Show when={!isSidebarCollapsed()}>
-                  <span>{item.label}</span>
+                  <span>{t(`navigation:${item.key}`)}</span>
                 </Show>
               </UiSideNavItem>
             )}
@@ -445,14 +426,14 @@ function App() {
       </aside>
 
       <div class={contentStackClass}>
-      <header class={contentHeaderClass} aria-label="Контекст активного профиля">
+      <header class={contentHeaderClass} aria-label={t("navigation:activeProfileContextAria")}>
         <div class={contentHeaderMetaClass}>
-          <span>Game: {activeGameId()}</span>
+          <span>{t("common:gameLabel")}: {activeGameId()}</span>
           <span>|</span>
-          <span>Profile:</span>
+          <span>{t("common:profileLabel")}:</span>
           <ProfileBadge profileId={activeProfileId()} />
         </div>
-        <ThemeSwitchButton testId="settings.theme-toggle" ariaLabel="Переключить тему интерфейса" />
+        <ThemeSwitchButton testId="settings.theme-toggle" ariaLabel={t("common:themeToggleAria")} />
       </header>
       <section class={contentClass} id="content" aria-live="polite">
         <Show when={lastError()}>
@@ -463,7 +444,7 @@ function App() {
           )}
         </Show>
 
-        <Suspense fallback={<p>Загрузка экрана...</p>}>
+        <Suspense fallback={<p>{t("common:loadingScreen")}</p>}>
           <Show when={activePage() === "game-overview"}>
             <GameOverviewPage
               activeProfileId={activeProfileId()}
@@ -505,51 +486,20 @@ function App() {
           </Show>
 
           <Show when={activePage() === "settings"}>
-            <UiPanel aria-label="Настройки интерфейса">
-              <h2 class={pageTitleClass}>Настройки</h2>
-              <p class={settingsTextClass}>
-                Активная тема:{" "}
-                <UiBadge tone="info">{theme() === "dark" ? "Темная" : "Светлая"}</UiBadge>
-              </p>
-              <UiTabsRoot
-                value={theme()}
-                onValueChange={(details: TabsValueChangeDetails) => {
-                  if (details.value === "dark" || details.value === "light") {
-                    setTheme(details.value);
-                  }
-                }}
-              >
-                <UiTabsList>
-                  <UiTabsTrigger value="dark" data-testid="settings.theme-dark">Dark</UiTabsTrigger>
-                  <UiTabsTrigger value="light" data-testid="settings.theme-light">Light</UiTabsTrigger>
-                </UiTabsList>
-                <UiTabsContent value="dark">
-                  <div class={settingsListClass}>
-                    <UiBadge tone="success">Hi-tech dark</UiBadge>
-                    <p class={settingsTextClass}>Контрастный темный интерфейс с четкими границами без скруглений.</p>
-                  </div>
-                </UiTabsContent>
-                <UiTabsContent value="light">
-                  <div class={settingsListClass}>
-                    <UiBadge tone="warning">Hi-tech light</UiBadge>
-                    <p class={settingsTextClass}>Светлая версия сохраняет геометрию, контраст и zero-radius стиль.</p>
-                  </div>
-                </UiTabsContent>
-              </UiTabsRoot>
-            </UiPanel>
+            <SettingsPage />
           </Show>
         </Suspense>
       </section>
       </div>
       <UiStatusBar class={statusBarFullWidthClass}>
         <div class={statusLeftClass}>
-          <span>JB Mod Manager</span>
-          <span>{theme() === "dark" ? "Dark Modern" : "Light Modern"}</span>
+          <span>{t("common:appName")}</span>
+          <span>{theme() === "dark" ? t("common:statusThemeDarkModern") : t("common:statusThemeLightModern")}</span>
         </div>
         <div class={statusRightClass}>
-          <span>Profile: {activeProfileId()}</span>
-          <span>Mods: {mods().length}</span>
-          <span>Conflicts: {conflicts().length}</span>
+          <span>{t("common:profileLabel")}: {activeProfileId()}</span>
+          <span>{t("common:modsLabel")}: {mods().length}</span>
+          <span>{t("common:conflictsLabel")}: {conflicts().length}</span>
         </div>
       </UiStatusBar>
     </main>

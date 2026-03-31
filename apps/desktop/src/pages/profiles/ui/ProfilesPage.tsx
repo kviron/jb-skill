@@ -1,4 +1,5 @@
 import { css } from "../../../styled-system/css";
+import { useTranslation } from "solid-i18next";
 import { panelHeader } from "../../../styled-system/recipes";
 import { UiButton, UiPanel } from "../../../shared/ui/primitives";
 import { ProfileBadge } from "../../../entities";
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function ProfilesPage(props: Props) {
+  const [t] = useTranslation(["common", "pages"]);
   const stackClass = css({ display: "grid", gap: "4", maxW: "560px" });
   const titleClass = css({ m: "0", fontSize: "lg", fontWeight: "semibold" });
   const subtitleClass = css({ m: "0", color: "text.secondary", fontSize: "sm" });
@@ -17,12 +19,12 @@ export function ProfilesPage(props: Props) {
 
   return (
     <div class={stackClass}>
-      <h2 class={titleClass}>Profiles</h2>
-      <p class={subtitleClass}>Управление активным профилем и переключением окружений</p>
+      <h2 class={titleClass}>{t("pages:profilesTitle")}</h2>
+      <p class={subtitleClass}>{t("pages:profilesSubtitle")}</p>
       <UiPanel>
-        <div class={panelHeader()}>Active Profile</div>
+        <div class={panelHeader()}>{t("pages:activeProfile")}</div>
         <div class={rowClass}>
-          <span>Текущий профиль:</span>
+          <span>{t("common:profileCurrent")}:</span>
           <ProfileBadge profileId={props.activeProfileId} />
         </div>
       </UiPanel>
@@ -32,7 +34,7 @@ export function ProfilesPage(props: Props) {
         onClick={props.onSwitchProfile}
         disabled={props.switchingProfile}
       >
-        {props.switchingProfile ? "Переключение..." : "Переключить профиль"}
+        {props.switchingProfile ? t("common:switchingProfile") : t("common:switchProfile")}
       </UiButton>
     </div>
   );

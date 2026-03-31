@@ -1,0 +1,10 @@
+{
+  "gameOverview": "Game Overview",
+  "profiles": "Profiles",
+  "mods": "Mods",
+  "conflicts": "Conflicts",
+  "operations": "Operation Log",
+  "settings": "Settings",
+  "mainNavigationAria": "Primary navigation",
+  "activeProfileContextAria": "Active profile context"
+}

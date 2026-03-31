@@ -1,4 +1,5 @@
 import { css } from "../../../styled-system/css";
+import { useTranslation } from "solid-i18next";
 import { panelHeader } from "../../../styled-system/recipes";
 import { UiBadge, UiPanel } from "../../../shared/ui/primitives";
 
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export function GameOverviewPage(props: Props) {
+  const [t] = useTranslation(["common", "pages"]);
   const titleClass = css({ m: "0 0 2", fontSize: "lg", fontWeight: "semibold" });
   const subtitleClass = css({ m: "0 0 4", color: "text.secondary", fontSize: "sm" });
   const gridClass = css({
@@ -20,24 +22,24 @@ export function GameOverviewPage(props: Props) {
 
   return (
     <>
-      <h2 class={titleClass}>Game Overview</h2>
-      <p class={subtitleClass}>Обзор состояния активного профиля и коллекции модов</p>
+      <h2 class={titleClass}>{t("pages:overviewTitle")}</h2>
+      <p class={subtitleClass}>{t("pages:overviewSubtitle")}</p>
       <div class={gridClass}>
         <UiPanel>
-          <div class={panelHeader()}>Runtime</div>
-          <div class={rowClass}><span>Игра</span><UiBadge tone="info">pilot-game</UiBadge></div>
+          <div class={panelHeader()}>{t("pages:runtime")}</div>
+          <div class={rowClass}><span>{t("common:gameLabel")}</span><UiBadge tone="info">pilot-game</UiBadge></div>
         </UiPanel>
         <UiPanel>
-          <div class={panelHeader()}>Profile</div>
-          <div class={rowClass}><span>Профиль</span><UiBadge tone="success">{props.activeProfileId}</UiBadge></div>
+          <div class={panelHeader()}>{t("pages:profile")}</div>
+          <div class={rowClass}><span>{t("common:profileLabel")}</span><UiBadge tone="success">{props.activeProfileId}</UiBadge></div>
         </UiPanel>
         <UiPanel>
-          <div class={panelHeader()}>Inventory</div>
-          <div class={rowClass}><span>Модов</span><UiBadge tone="warning">{props.modsCount}</UiBadge></div>
+          <div class={panelHeader()}>{t("pages:inventory")}</div>
+          <div class={rowClass}><span>{t("common:modsLabel")}</span><UiBadge tone="warning">{props.modsCount}</UiBadge></div>
         </UiPanel>
         <UiPanel>
-          <div class={panelHeader()}>Diagnostics</div>
-          <div class={rowClass}><span>Конфликтов</span><UiBadge tone="error">{props.conflictsCount}</UiBadge></div>
+          <div class={panelHeader()}>{t("pages:diagnostics")}</div>
+          <div class={rowClass}><span>{t("common:conflictsLabel")}</span><UiBadge tone="error">{props.conflictsCount}</UiBadge></div>
         </UiPanel>
       </div>
     </>

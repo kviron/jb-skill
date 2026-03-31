@@ -1,4 +1,5 @@
 import { For } from "solid-js";
+import { useTranslation } from "solid-i18next";
 
 import type { ModRecord } from "../../../shared/api/core";
 import { css, cx } from "../../../styled-system/css";
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export function ModsPage(props: Props) {
+  const [t] = useTranslation(["common", "pages"]);
   const titleClass = css({ m: "0 0 2", fontSize: "lg", fontWeight: "semibold" });
   const subtitleClass = css({ m: "0 0 4", color: "text.secondary", fontSize: "sm" });
   const formClass = css({
@@ -43,8 +45,8 @@ export function ModsPage(props: Props) {
 
   return (
     <>
-      <h2 class={titleClass}>Mods List</h2>
-      <p class={subtitleClass}>Каталог модов, установка из архива и quick actions</p>
+      <h2 class={titleClass}>{t("pages:modsTitle")}</h2>
+      <p class={subtitleClass}>{t("pages:modsSubtitle")}</p>
       <form
         class={formClass}
         onSubmit={(event) => {
@@ -52,7 +54,7 @@ export function ModsPage(props: Props) {
           props.onInstall();
         }}
       >
-        <label class={labelClass} for="archivePath">Архив мода</label>
+        <label class={labelClass} for="archivePath">{t("pages:modsArchiveLabel")}</label>
         <UiInput
           id="archivePath"
           data-testid="mods.archive-input"
@@ -61,18 +63,18 @@ export function ModsPage(props: Props) {
           placeholder="C:/mods/my-mod.zip"
         />
         <UiButton variant="solid" type="submit" data-testid="mods.install-button" disabled={props.installing}>
-          {props.installing ? "Установка..." : "Установить"}
+          {props.installing ? t("common:installing") : t("common:install")}
         </UiButton>
       </form>
 
       <div class={searchWrapClass}>
-        <label class={labelClass} for="searchInput">Поиск модов</label>
+        <label class={labelClass} for="searchInput">{t("pages:modsSearchLabel")}</label>
         <UiInput
           id="searchInput"
           data-testid="mods.search-input"
           value={props.modSearch}
           onInput={(event) => props.onSearchInput(event.currentTarget.value)}
-          placeholder="Введите имя мода"
+          placeholder={t("pages:modsSearchPlaceholder")}
         />
       </div>
 
@@ -80,11 +82,13 @@ export function ModsPage(props: Props) {
         <For each={props.mods}>
           {(item) => (
             <li class={cx(panel(), itemClass)}>
-              <div class={panelHeader()}>Mod Entry</div>
+              <div class={panelHeader()}>{t("pages:modEntry")}</div>
               <div class={itemMetaClass}>
                 <strong>{item.name}</strong>
                 <UiBadge tone={item.enabled ? "success" : "warning"}>
-                  {item.enabled ? "Enabled" : "Disabled"} v{item.version ?? "0.0.0"}
+                  {item.enabled
+                    ? t("common:enabledVersion", { version: item.version ?? "0.0.0" })
+                    : t("common:disabledVersion", { version: item.version ?? "0.0.0" })}
                 </UiBadge>
               </div>
               <div class={actionsClass}>
@@ -93,7 +97,7 @@ export function ModsPage(props: Props) {
                   disabled={props.togglingModId === item.id}
                   onClick={() => props.onToggle(item)}
                 >
-                  {item.enabled ? "Выключить" : "Включить"}
+                  {item.enabled ? t("common:disable") : t("common:enable")}
                 </UiButton>
                 <UiButton
                   variant="danger"
@@ -101,7 +105,7 @@ export function ModsPage(props: Props) {
                   disabled={props.removingModId === item.id}
                   onClick={() => props.onRemove(item)}
                 >
-                  Удалить
+                  {t("common:remove")}
                 </UiButton>
               </div>
             </li>

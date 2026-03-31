@@ -1,0 +1,10 @@
+{
+  "gameOverview": "Обзор игры",
+  "profiles": "Профили",
+  "mods": "Моды",
+  "conflicts": "Конфликты",
+  "operations": "Журнал операций",
+  "settings": "Настройки",
+  "mainNavigationAria": "Основная навигация",
+  "activeProfileContextAria": "Контекст активного профиля"
+}
