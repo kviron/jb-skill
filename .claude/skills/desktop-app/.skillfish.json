@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "desktop-app",
+  "owner": "popup-studio-ai",
+  "repo": "bkit-claude-code",
+  "path": "skills/desktop-app",
+  "branch": "main",
+  "sha": "60eea5a89ed4b5ceed7fb5cabc06b7650b5d1bab",
+  "source": "manual"
+}

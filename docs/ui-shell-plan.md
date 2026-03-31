@@ -64,7 +64,7 @@ src/
 - `ConflictsPage`
 - `OperationLogPage`
 
-## Предложение структуры UI по FSD
+## Реализованная структура UI по FSD
 
 ```text
 src/
@@ -104,6 +104,16 @@ src/
       panda/
 ```
 
+Дополнительно сгенерирован слой Panda:
+
+```text
+src/styled-system/
+  css/
+  recipes/
+  tokens/
+  patterns/
+```
+
 ## UI stack: Ark UI + Panda CSS
 
 ### Базовый выбор
@@ -119,10 +129,10 @@ src/
 - Компоненты страниц используют только публичные обертки из `shared/ui/ark`, не импортируют сырые primitives напрямую.
 - Для интерактивных контролов обязателен keyboard/focus flow из Ark UI + визуальный `focus-visible` стиль через Panda tokens.
 
-### Минимальный набор для старта
+### Используемый набор
 
 - Ark UI primitives:
-  - `Dialog`, `Popover`, `Tooltip`, `Tabs`, `Accordion`, `Menu`.
+  - `Tabs` (через обертки в `shared/ui/ark`).
 - Panda CSS:
   - color tokens (включая контрастные пары),
   - spacing/radius/typography tokens,
@@ -217,4 +227,10 @@ UI подписывается на события:
 - `feature-sliced-design`: импорт только сверху вниз, public API через `index.ts`, экстракция в lower layers только при подтвержденной повторной используемости.
 - `user-ark-ui`/`ark` практики: сложные интерактивные паттерны (dialog/menu/tabs) строить на Ark UI primitives, не писать их с нуля.
 - `user-panda`/`panda` практики: централизовать дизайн-токены и recipes в Panda CSS для консистентности и масштабируемости.
+
+## Статус внедрения
+
+- `App` и страницы (`game-overview`, `profiles`, `mods`, `conflicts`, `operations`) переведены на Panda classes/recipes и shared primitives.
+- Тема вынесена в `app/providers/theme.tsx` и переключается через Ark Tabs в настройках.
+- Визуальный стиль приведен к hi-tech направлению без скруглений (radius tokens = `none`).
 

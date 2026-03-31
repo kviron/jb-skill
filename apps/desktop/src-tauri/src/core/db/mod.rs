@@ -32,6 +32,7 @@ const MIGRATIONS: &[Migration] = &[
         );
         CREATE INDEX IF NOT EXISTS idx_profiles_game_id ON profiles(game_id);
         CREATE INDEX IF NOT EXISTS idx_profiles_active_game ON profiles(game_id, is_active);
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_profiles_one_active_per_game ON profiles(game_id) WHERE is_active = 1;
 
         CREATE TABLE IF NOT EXISTS mods (
           id TEXT PRIMARY KEY,
@@ -64,6 +65,7 @@ const MIGRATIONS: &[Migration] = &[
           is_current INTEGER NOT NULL DEFAULT 1
         );
         CREATE INDEX IF NOT EXISTS idx_deploy_state_profile_current ON deploy_state(profile_id, is_current);
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_deploy_state_one_current_per_profile ON deploy_state(profile_id) WHERE is_current = 1;
 
         CREATE TABLE IF NOT EXISTS conflicts (
           id TEXT PRIMARY KEY,
@@ -106,6 +108,14 @@ const MIGRATIONS: &[Migration] = &[
         );
         CREATE INDEX IF NOT EXISTS idx_tx_steps_txid ON transaction_steps(transaction_id);
         CREATE INDEX IF NOT EXISTS idx_tx_steps_order ON transaction_steps(transaction_id, step_order);
+        "#,
+    },
+    Migration {
+        version: 3,
+        name: "003_transaction_steps",
+        sql: r#"
+        ALTER TABLE transaction_steps ADD COLUMN duration_ms INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE transaction_steps ADD COLUMN error_code TEXT;
         "#,
     },
 ];

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "tauri-command",
+  "owner": "varubogu",
+  "repo": "flequit",
+  "path": ".claude/skills/tauri-command",
+  "branch": "main",
+  "sha": "82f8bdcebd012a60ac0704aec92ceed263f5e279",
+  "source": "manual"
+}

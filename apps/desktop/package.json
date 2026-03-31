@@ -5,19 +5,25 @@
   "type": "module",
   "scripts": {
     "start": "vite",
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "panda codegen && panda cssgen --outfile src/styled-system/styles.css && vite",
+    "build": "panda codegen && panda cssgen --outfile src/styled-system/styles.css && vite build",
     "serve": "vite preview",
     "test:e2e": "playwright test",
-    "tauri": "tauri"
+    "tauri": "tauri dev",
+    "panda:codegen": "panda codegen",
+    "panda:cssgen": "panda cssgen --outfile src/styled-system/styles.css"
   },
   "license": "MIT",
   "dependencies": {
+    "@ark-ui/solid": "^5.35.0",
+    "@pandacss/dev": "^1.9.1",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "lucide-solid": "^1.7.0",
     "solid-js": "^1.9.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "^1.58.2",
     "@tauri-apps/cli": "^2",
     "typescript": "~5.6.2",

@@ -10,10 +10,14 @@
 - требования доступности и производительности;
 - правила масштабирования тем.
 
-## Ограничения и контекст
+## Текущая реализация
 
-- Проект сейчас документационный, `package.json` и `panda.config.*` в репозитории не обнаружены.
-- Поэтому ниже — целевой blueprint для внедрения в момент инициализации frontend-пакета.
+- Panda подключен в `apps/desktop` через `panda.config.ts`.
+- Генерация выполняется командами:
+  - `npm run panda:codegen`
+  - `npm run panda:cssgen`
+- Входная точка импортирует `src/styled-system/styles.css`.
+- Theme provider живет в `src/app/providers/theme.tsx` и ставит `data-theme="dark|light"` на `documentElement`.
 
 ## Архитектура темы
 
@@ -75,7 +79,7 @@ text: {
 Обязательный минимум:
 
 - spacing scale (например 2/4/8/12/16/24/32)
-- radius scale (`sm/md/lg/xl`)
+- radius scale: `none` (hi-tech стиль без скруглений)
 - font sizes (`xs/sm/md/lg/xl`)
 - line heights (`tight/normal/relaxed`)
 - font weights (`regular/medium/semibold/bold`)
@@ -111,18 +115,10 @@ text: {
 
 ```text
 src/shared/styles/panda/
-  tokens/
-    colors.ts
-    spacing.ts
-    typography.ts
-    radii.ts
-  semantic/
-    colors.semantic.ts
-    states.semantic.ts
-  recipes/
-    (по мере надобности)
-  patterns/
-    (по мере надобности)
+  tokens.ts
+  semantic.ts
+  recipes.ts
+  index.ts
 ```
 
 Правила имен:
@@ -130,14 +126,14 @@ src/shared/styles/panda/
 - Роли по смыслу (`text.primary`), а не по реализации (`gray900` в UI).
 - Доменные состояния (`state.error.*`) держать отдельно от нейтральной палитры.
 
-## Процесс внедрения (пошагово)
+## Процесс внедрения (статус)
 
-1. Инициализировать Panda config в frontend-пакете.
-2. Завести base tokens.
-3. Завести semantic tokens c `base/_dark`.
-4. Подключить theme provider на уровне `app/providers`.
-5. Перевести страницы на semantic tokens.
-6. Зафиксировать a11y regression check для light/dark в test plan.
+1. Инициализирован `panda.config.ts` и outdir `src/styled-system`.
+2. Добавлены base tokens и semantic tokens (base/_dark).
+3. Добавлены recipes: `button`, `input`, `panel`, `badge`.
+4. Переключение темы вынесено в `ThemeProvider`.
+5. UI-страницы мигрированы на Panda classes/recipes.
+6. Проверка: `npm run build` успешно проходит с Panda codegen+cssgen.
 
 ## Definition of done для темы
 

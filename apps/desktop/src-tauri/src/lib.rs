@@ -16,7 +16,10 @@ pub fn run() {
                 .join("core.db");
             let db = CoreDb::new(path).map_err(|_| tauri::Error::AssetNotFound("db_init".into()))?;
             let _ = tx::recover_started_transactions(&db.conn);
-            let plugin_manifest = PathBuf::from("../..")
+            let plugin_manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("..")
+                .join("..")
                 .join("plugins")
                 .join("game-pilot")
                 .join("manifest.json");

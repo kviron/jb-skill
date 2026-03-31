@@ -2,28 +2,44 @@ use tauri::State;
 
 use crate::core::{
     app_state::AppState,
-    contracts::{ok, ApiResponse, ConflictRecord, InstallResult, ModRecord, OperationResult, SwitchProfileResult},
-    errors::{ApiError, CoreError},
+    contracts::{err, ok, ApiResponse, ConflictRecord, InstallResult, ModRecord, OperationResult, SwitchProfileResult},
+    errors::ApiError,
     events,
     plugins,
     use_cases,
 };
 
 #[tauri::command]
-pub fn core_list_mods(state: State<'_, AppState>, game_id: String) -> Result<ApiResponse<Vec<ModRecord>>, ApiError> {
-    let db = state.db.lock().map_err(|_| ApiError::from(CoreError::InvalidInput))?;
-    let data = use_cases::list_mods(&db.conn, &game_id).map_err(ApiError::from)?;
-    Ok(ok(data))
+pub fn core_list_mods(state: State<'_, AppState>, game_id: String) -> ApiResponse<Vec<ModRecord>> {
+    let db = match state.db.lock() {
+        Ok(db) => db,
+        Err(_) => return err("INVALID_INPUT", "Invalid input", true),
+    };
+    match use_cases::list_mods(&db.conn, &game_id) {
+        Ok(data) => ok(data),
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
+            err(&api_err.code, &api_err.message, api_err.recoverable)
+        }
+    }
 }
 
 #[tauri::command]
 pub fn core_get_conflicts(
     state: State<'_, AppState>,
     profile_id: String,
-) -> Result<ApiResponse<Vec<ConflictRecord>>, ApiError> {
-    let db = state.db.lock().map_err(|_| ApiError::from(CoreError::InvalidInput))?;
-    let data = use_cases::get_conflicts(&db.conn, &profile_id).map_err(ApiError::from)?;
-    Ok(ok(data))
+) -> ApiResponse<Vec<ConflictRecord>> {
+    let db = match state.db.lock() {
+        Ok(db) => db,
+        Err(_) => return err("INVALID_INPUT", "Invalid input", true),
+    };
+    match use_cases::get_conflicts(&db.conn, &profile_id) {
+        Ok(data) => ok(data),
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
+            err(&api_err.code, &api_err.message, api_err.recoverable)
+        }
+    }
 }
 
 #[tauri::command]
@@ -33,14 +49,17 @@ pub fn core_install_mod_from_archive(
     game_id: String,
     profile_id: String,
     archive_path: String,
-) -> Result<ApiResponse<InstallResult>, ApiError> {
-    let mut db = state.db.lock().map_err(|_| ApiError::from(CoreError::InvalidInput))?;
-    events::emit_install_will_start(&app, "pending");
-    events::emit_deploy_will_start(&app, "pending");
+) -> ApiResponse<InstallResult> {
+    let mut db = match state.db.lock() {
+        Ok(db) => db,
+        Err(_) => return err("INVALID_INPUT", "Invalid input", true),
+    };
+    events::emit_install_will_start(&app, "pending", &profile_id);
+    events::emit_deploy_will_start(&app, "pending", &profile_id);
     let result = match use_cases::install_mod_from_archive(&mut db.conn, &game_id, &profile_id, &archive_path) {
         Ok(value) => value,
-        Err(err) => {
-            let api_err = ApiError::from(err);
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
             events::emit_operation_failed(
                 &app,
                 "pending",
@@ -49,14 +68,20 @@ pub fn core_install_mod_from_archive(
                 &api_err.message,
                 api_err.recoverable,
             );
-            return Err(api_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
         }
     };
-    let count = use_cases::recalc_conflicts(&db.conn, &profile_id).map_err(ApiError::from)?;
+    let count = match use_cases::recalc_conflicts(&db.conn, &profile_id) {
+        Ok(count) => count,
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
+        }
+    };
     events::emit_conflicts_recalculated(&app, &profile_id, count);
-    events::emit_deploy_did_finish(&app, &result.operation_id);
-    events::emit_install_did_finish(&app, &result.operation_id);
-    Ok(ok(result))
+    events::emit_deploy_did_finish(&app, &result.operation_id, &profile_id);
+    events::emit_install_did_finish(&app, &result.operation_id, &profile_id, &result.mod_id);
+    ok(result)
 }
 
 #[tauri::command]
@@ -66,13 +91,16 @@ pub fn core_set_mod_enabled(
     profile_id: String,
     mod_id: String,
     enabled: bool,
-) -> Result<ApiResponse<OperationResult>, ApiError> {
-    let mut db = state.db.lock().map_err(|_| ApiError::from(CoreError::InvalidInput))?;
-    events::emit_deploy_will_start(&app, "pending");
+) -> ApiResponse<OperationResult> {
+    let mut db = match state.db.lock() {
+        Ok(db) => db,
+        Err(_) => return err("INVALID_INPUT", "Invalid input", true),
+    };
+    events::emit_deploy_will_start(&app, "pending", &profile_id);
     let result = match use_cases::set_mod_enabled(&mut db.conn, &profile_id, &mod_id, enabled) {
         Ok(value) => value,
-        Err(err) => {
-            let api_err = ApiError::from(err);
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
             events::emit_operation_failed(
                 &app,
                 "pending",
@@ -81,13 +109,19 @@ pub fn core_set_mod_enabled(
                 &api_err.message,
                 api_err.recoverable,
             );
-            return Err(api_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
         }
     };
-    let count = use_cases::recalc_conflicts(&db.conn, &profile_id).map_err(ApiError::from)?;
+    let count = match use_cases::recalc_conflicts(&db.conn, &profile_id) {
+        Ok(count) => count,
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
+        }
+    };
     events::emit_conflicts_recalculated(&app, &profile_id, count);
-    events::emit_deploy_did_finish(&app, &result.operation_id);
-    Ok(ok(result))
+    events::emit_deploy_did_finish(&app, &result.operation_id, &profile_id);
+    ok(result)
 }
 
 #[tauri::command]
@@ -96,13 +130,16 @@ pub fn core_remove_mod(
     state: State<'_, AppState>,
     profile_id: String,
     mod_id: String,
-) -> Result<ApiResponse<OperationResult>, ApiError> {
-    let mut db = state.db.lock().map_err(|_| ApiError::from(CoreError::InvalidInput))?;
-    events::emit_deploy_will_start(&app, "pending");
+) -> ApiResponse<OperationResult> {
+    let mut db = match state.db.lock() {
+        Ok(db) => db,
+        Err(_) => return err("INVALID_INPUT", "Invalid input", true),
+    };
+    events::emit_deploy_will_start(&app, "pending", &profile_id);
     let result = match use_cases::remove_mod(&mut db.conn, &profile_id, &mod_id) {
         Ok(value) => value,
-        Err(err) => {
-            let api_err = ApiError::from(err);
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
             events::emit_operation_failed(
                 &app,
                 "pending",
@@ -111,13 +148,19 @@ pub fn core_remove_mod(
                 &api_err.message,
                 api_err.recoverable,
             );
-            return Err(api_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
         }
     };
-    let count = use_cases::recalc_conflicts(&db.conn, &profile_id).map_err(ApiError::from)?;
+    let count = match use_cases::recalc_conflicts(&db.conn, &profile_id) {
+        Ok(count) => count,
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
+        }
+    };
     events::emit_conflicts_recalculated(&app, &profile_id, count);
-    events::emit_deploy_did_finish(&app, &result.operation_id);
-    Ok(ok(result))
+    events::emit_deploy_did_finish(&app, &result.operation_id, &profile_id);
+    ok(result)
 }
 
 #[tauri::command]
@@ -126,14 +169,17 @@ pub fn core_switch_profile(
     state: State<'_, AppState>,
     game_id: String,
     target_profile_id: String,
-) -> Result<ApiResponse<SwitchProfileResult>, ApiError> {
-    let mut db = state.db.lock().map_err(|_| ApiError::from(CoreError::InvalidInput))?;
-    events::emit_profile_will_change(&app, "pending");
-    events::emit_deploy_will_start(&app, "pending");
+) -> ApiResponse<SwitchProfileResult> {
+    let mut db = match state.db.lock() {
+        Ok(db) => db,
+        Err(_) => return err("INVALID_INPUT", "Invalid input", true),
+    };
+    events::emit_profile_will_change(&app, "pending", &target_profile_id);
+    events::emit_deploy_will_start(&app, "pending", &target_profile_id);
     let result = match use_cases::switch_profile(&mut db.conn, &game_id, &target_profile_id) {
         Ok(value) => value,
-        Err(err) => {
-            let api_err = ApiError::from(err);
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
             events::emit_operation_failed(
                 &app,
                 "pending",
@@ -142,20 +188,37 @@ pub fn core_switch_profile(
                 &api_err.message,
                 api_err.recoverable,
             );
-            return Err(api_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
         }
     };
-    let count = use_cases::recalc_conflicts(&db.conn, &target_profile_id).map_err(ApiError::from)?;
+    let count = match use_cases::recalc_conflicts(&db.conn, &target_profile_id) {
+        Ok(count) => count,
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
+        }
+    };
     events::emit_conflicts_recalculated(&app, &target_profile_id, count);
-    events::emit_deploy_did_finish(&app, &result.operation_id);
-    events::emit_profile_did_change(&app, &result.operation_id);
-    Ok(ok(result))
+    events::emit_deploy_did_finish(&app, &result.operation_id, &target_profile_id);
+    events::emit_profile_did_change(&app, &result.operation_id, &target_profile_id);
+    ok(result)
 }
 
 #[tauri::command]
-pub fn core_plugin_smoke_test() -> Result<ApiResponse<plugins::SmokeResult>, ApiError> {
+pub fn core_plugin_smoke_test() -> ApiResponse<plugins::SmokeResult> {
     let manifest_path = plugins::plugin_root().join("game-pilot").join("manifest.json");
-    let manifest = plugins::load_manifest(&manifest_path).map_err(ApiError::from)?;
-    let smoke = plugins::run_smoke_test(&manifest, "sample.zip").map_err(ApiError::from)?;
-    Ok(ok(smoke))
+    let manifest = match plugins::load_manifest(&manifest_path) {
+        Ok(manifest) => manifest,
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
+            return err(&api_err.code, &api_err.message, api_err.recoverable);
+        }
+    };
+    match plugins::run_smoke_test(&manifest, "sample.zip") {
+        Ok(smoke) => ok(smoke),
+        Err(core_err) => {
+            let api_err = ApiError::from_core(core_err);
+            err(&api_err.code, &api_err.message, api_err.recoverable)
+        }
+    }
 }

@@ -1,14 +1,31 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
+type DomainEvent = {
+  name: string;
+  timestamp: string;
+  operationId: string;
+  profileId?: string | null;
+  payload?: Record<string, unknown>;
+};
+
 export async function subscribeDomainEvents(appendLog: (entry: string) => void): Promise<UnlistenFn[]> {
+  const withEvent = (eventName: string) =>
+    listen<DomainEvent>(eventName, (event) => {
+      const operationId = event.payload?.operationId ?? "n/a";
+      appendLog(`${eventName} [${operationId}]`);
+    });
+
   return Promise.all([
-    listen("install.will-start", () => appendLog("install.will-start")),
-    listen("install.did-finish", () => appendLog("install.did-finish")),
-    listen("deploy.will-start", () => appendLog("deploy.will-start")),
-    listen("deploy.did-finish", () => appendLog("deploy.did-finish")),
-    listen("profile.will-change", () => appendLog("profile.will-change")),
-    listen("profile.did-change", () => appendLog("profile.did-change")),
-    listen("conflicts.recalculated", () => appendLog("conflicts.recalculated")),
-    listen("operation.failed", () => appendLog("operation.failed")),
+    withEvent("install.will-start"),
+    withEvent("install.did-finish"),
+    withEvent("deploy.will-start"),
+    withEvent("deploy.did-finish"),
+    withEvent("profile.will-change"),
+    withEvent("profile.did-change"),
+    withEvent("conflicts.recalculated"),
+    listen<DomainEvent>("operation.failed", (event) => {
+      const payload = event.payload?.payload as { message?: string; errorCode?: string } | undefined;
+      appendLog(`operation.failed [${payload?.errorCode ?? "UNKNOWN"}] ${payload?.message ?? ""}`.trim());
+    }),
   ]);
 }

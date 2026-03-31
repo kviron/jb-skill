@@ -1,6 +1,9 @@
 import { For } from "solid-js";
 
 import type { ModRecord } from "../../../shared/api/core";
+import { css, cx } from "../../../styled-system/css";
+import { panel, panelHeader } from "../../../styled-system/recipes";
+import { UiBadge, UiButton, UiInput } from "../../../shared/ui/primitives";
 
 type Props = {
   modArchivePath: string;
@@ -17,61 +20,89 @@ type Props = {
 };
 
 export function ModsPage(props: Props) {
+  const titleClass = css({ m: "0 0 2", fontSize: "lg", fontWeight: "semibold" });
+  const subtitleClass = css({ m: "0 0 4", color: "text.secondary", fontSize: "sm" });
+  const formClass = css({
+    display: "grid",
+    gap: "3",
+    gridTemplateColumns: "180px 1fr auto",
+    alignItems: "end",
+    mb: "4",
+  });
+  const labelClass = css({ color: "text.secondary", fontSize: "sm" });
+  const searchWrapClass = css({ display: "grid", gap: "2", mb: "4", maxW: "640px" });
+  const listClass = css({ listStyle: "none", p: "0", m: "0", display: "grid", gap: "3" });
+  const itemClass = css({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "3",
+  });
+  const itemMetaClass = css({ display: "grid", gap: "1" });
+  const actionsClass = css({ display: "flex", gap: "2", flexWrap: "wrap" });
+
   return (
     <>
-      <h2>Mods List</h2>
+      <h2 class={titleClass}>Mods List</h2>
+      <p class={subtitleClass}>Каталог модов, установка из архива и quick actions</p>
       <form
-        class="toolbar"
+        class={formClass}
         onSubmit={(event) => {
           event.preventDefault();
           props.onInstall();
         }}
       >
-        <label for="archivePath">Архив мода</label>
-        <input
+        <label class={labelClass} for="archivePath">Архив мода</label>
+        <UiInput
           id="archivePath"
           data-testid="mods.archive-input"
           value={props.modArchivePath}
           onInput={(event) => props.onArchivePathInput(event.currentTarget.value)}
           placeholder="C:/mods/my-mod.zip"
         />
-        <button type="submit" data-testid="mods.install-button" disabled={props.installing}>
+        <UiButton variant="solid" type="submit" data-testid="mods.install-button" disabled={props.installing}>
           {props.installing ? "Установка..." : "Установить"}
-        </button>
+        </UiButton>
       </form>
 
-      <label for="searchInput">Поиск модов</label>
-      <input
-        id="searchInput"
-        data-testid="mods.search-input"
-        value={props.modSearch}
-        onInput={(event) => props.onSearchInput(event.currentTarget.value)}
-        placeholder="Введите имя мода"
-      />
+      <div class={searchWrapClass}>
+        <label class={labelClass} for="searchInput">Поиск модов</label>
+        <UiInput
+          id="searchInput"
+          data-testid="mods.search-input"
+          value={props.modSearch}
+          onInput={(event) => props.onSearchInput(event.currentTarget.value)}
+          placeholder="Введите имя мода"
+        />
+      </div>
 
-      <ul class="mods-list">
+      <ul class={listClass}>
         <For each={props.mods}>
           {(item) => (
-            <li>
-              <div>
+            <li class={cx(panel(), itemClass)}>
+              <div class={panelHeader()}>Mod Entry</div>
+              <div class={itemMetaClass}>
                 <strong>{item.name}</strong>
-                <span>v{item.version ?? "0.0.0"}</span>
+                <UiBadge tone={item.enabled ? "success" : "warning"}>
+                  {item.enabled ? "Enabled" : "Disabled"} v{item.version ?? "0.0.0"}
+                </UiBadge>
               </div>
-              <div class="mod-actions">
-                <button
+              <div class={actionsClass}>
+                <UiButton
                   data-testid={`mods.toggle.${item.id}`}
                   disabled={props.togglingModId === item.id}
                   onClick={() => props.onToggle(item)}
                 >
                   {item.enabled ? "Выключить" : "Включить"}
-                </button>
-                <button
+                </UiButton>
+                <UiButton
+                  variant="danger"
                   data-testid={`mods.remove.${item.id}`}
                   disabled={props.removingModId === item.id}
                   onClick={() => props.onRemove(item)}
                 >
                   Удалить
-                </button>
+                </UiButton>
               </div>
             </li>
           )}

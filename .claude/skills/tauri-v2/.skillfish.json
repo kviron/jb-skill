@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "tauri-v2",
+  "owner": "nodnarbnitram",
+  "repo": "claude-code-extensions",
+  "path": ".claude/skills/tauri-v2",
+  "branch": "main",
+  "sha": "e18c20b2fd0fd97e0f49f019a2c2c60c84885983",
+  "source": "manual"
+}

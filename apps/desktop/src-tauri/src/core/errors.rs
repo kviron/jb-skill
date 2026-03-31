@@ -19,6 +19,10 @@ pub enum CoreError {
     PluginTimeout,
     #[error("Plugin permission denied")]
     PluginPermissionDenied,
+    #[error("Plugin invalid plan")]
+    PluginInvalidPlan,
+    #[error("Rollback failed")]
+    RollbackFailed,
     #[error("Database operation failed")]
     Db(#[from] rusqlite::Error),
 }
@@ -74,11 +78,27 @@ impl From<CoreError> for ApiError {
                 message: "Plugin permission denied".into(),
                 recoverable: false,
             },
+            CoreError::PluginInvalidPlan => Self {
+                code: "PLUGIN_INVALID_PLAN".into(),
+                message: "Plugin returned invalid plan".into(),
+                recoverable: false,
+            },
+            CoreError::RollbackFailed => Self {
+                code: "ROLLBACK_FAILED".into(),
+                message: "Rollback failed".into(),
+                recoverable: false,
+            },
             CoreError::Db(_) => Self {
                 code: "DEPLOY_FAILED".into(),
                 message: "Core operation failed".into(),
                 recoverable: true,
             },
         }
+    }
+}
+
+impl ApiError {
+    pub fn from_core(value: CoreError) -> Self {
+        Self::from(value)
     }
 }

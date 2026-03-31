@@ -1,74 +1,66 @@
 use tauri::Emitter;
 
-use crate::core::contracts::{ConflictRecalculatedEvent, OperationEvent, OperationFailedEvent};
+use chrono::Utc;
+use serde_json::json;
 
-pub fn emit_install_will_start(app: &tauri::AppHandle, operation_id: &str) {
+use crate::core::contracts::DomainEvent;
+
+fn emit_domain_event(
+    app: &tauri::AppHandle,
+    name: &str,
+    operation_id: &str,
+    profile_id: Option<&str>,
+    payload: serde_json::Value,
+) {
     let _ = app.emit(
-        "install.will-start",
-        OperationEvent {
+        name,
+        DomainEvent {
+            name: name.to_string(),
+            timestamp: Utc::now().to_rfc3339(),
             operation_id: operation_id.to_string(),
-            message: "Install started".to_string(),
+            profile_id: profile_id.map(ToString::to_string),
+            payload,
         },
     );
 }
 
-pub fn emit_install_did_finish(app: &tauri::AppHandle, operation_id: &str) {
-    let _ = app.emit(
+pub fn emit_install_will_start(app: &tauri::AppHandle, operation_id: &str, profile_id: &str) {
+    emit_domain_event(app, "install.will-start", operation_id, Some(profile_id), json!({}));
+}
+
+pub fn emit_install_did_finish(app: &tauri::AppHandle, operation_id: &str, profile_id: &str, mod_id: &str) {
+    emit_domain_event(
+        app,
         "install.did-finish",
-        OperationEvent {
-            operation_id: operation_id.to_string(),
-            message: "Install finished".to_string(),
-        },
+        operation_id,
+        Some(profile_id),
+        json!({ "modId": mod_id }),
     );
 }
 
-pub fn emit_deploy_will_start(app: &tauri::AppHandle, operation_id: &str) {
-    let _ = app.emit(
-        "deploy.will-start",
-        OperationEvent {
-            operation_id: operation_id.to_string(),
-            message: "Deploy started".to_string(),
-        },
-    );
+pub fn emit_deploy_will_start(app: &tauri::AppHandle, operation_id: &str, profile_id: &str) {
+    emit_domain_event(app, "deploy.will-start", operation_id, Some(profile_id), json!({}));
 }
 
-pub fn emit_deploy_did_finish(app: &tauri::AppHandle, operation_id: &str) {
-    let _ = app.emit(
-        "deploy.did-finish",
-        OperationEvent {
-            operation_id: operation_id.to_string(),
-            message: "Deploy finished".to_string(),
-        },
-    );
+pub fn emit_deploy_did_finish(app: &tauri::AppHandle, operation_id: &str, profile_id: &str) {
+    emit_domain_event(app, "deploy.did-finish", operation_id, Some(profile_id), json!({}));
 }
 
-pub fn emit_profile_will_change(app: &tauri::AppHandle, operation_id: &str) {
-    let _ = app.emit(
-        "profile.will-change",
-        OperationEvent {
-            operation_id: operation_id.to_string(),
-            message: "Switching profile".to_string(),
-        },
-    );
+pub fn emit_profile_will_change(app: &tauri::AppHandle, operation_id: &str, profile_id: &str) {
+    emit_domain_event(app, "profile.will-change", operation_id, Some(profile_id), json!({}));
 }
 
-pub fn emit_profile_did_change(app: &tauri::AppHandle, operation_id: &str) {
-    let _ = app.emit(
-        "profile.did-change",
-        OperationEvent {
-            operation_id: operation_id.to_string(),
-            message: "Profile switched".to_string(),
-        },
-    );
+pub fn emit_profile_did_change(app: &tauri::AppHandle, operation_id: &str, profile_id: &str) {
+    emit_domain_event(app, "profile.did-change", operation_id, Some(profile_id), json!({}));
 }
 
 pub fn emit_conflicts_recalculated(app: &tauri::AppHandle, profile_id: &str, count: usize) {
-    let _ = app.emit(
+    emit_domain_event(
+        app,
         "conflicts.recalculated",
-        ConflictRecalculatedEvent {
-            profile_id: profile_id.to_string(),
-            count,
-        },
+        "system",
+        Some(profile_id),
+        json!({ "count": count }),
     );
 }
 
@@ -80,14 +72,16 @@ pub fn emit_operation_failed(
     message: &str,
     recoverable: bool,
 ) {
-    let _ = app.emit(
+    emit_domain_event(
+        app,
         "operation.failed",
-        OperationFailedEvent {
-            operation_id: operation_id.to_string(),
-            stage: stage.to_string(),
-            error_code: error_code.to_string(),
-            message: message.to_string(),
-            recoverable,
-        },
+        operation_id,
+        None,
+        json!({
+            "stage": stage,
+            "errorCode": error_code,
+            "message": message,
+            "recoverable": recoverable
+        }),
     );
 }
