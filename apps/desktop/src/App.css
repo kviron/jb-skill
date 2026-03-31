@@ -1,0 +1,104 @@
+:root {
+  font-family: Inter, Arial, sans-serif;
+  color: #e2e8f0;
+  background: #0f172a;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.skip-link {
+  position: absolute;
+  left: -1000px;
+  top: 8px;
+}
+
+.skip-link:focus {
+  left: 8px;
+  background: #1d4ed8;
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.sidebar {
+  background: #111827;
+  padding: 16px;
+  border-right: 1px solid #1f2937;
+}
+
+.sidebar h1 {
+  font-size: 1.1rem;
+  margin: 0 0 16px;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.content {
+  padding: 20px;
+}
+
+.toolbar,
+.mods-list li,
+.conflicts-list li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+input,
+button {
+  min-height: 36px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #0b1220;
+  color: #e2e8f0;
+  padding: 6px 10px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+
+.mods-list,
+.conflicts-list,
+.logs-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mods-list li,
+.conflicts-list li,
+.logs-list li {
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  padding: 10px;
+  background: #0b1220;
+  justify-content: space-between;
+}
+
+.mod-actions {
+  display: flex;
+  gap: 8px;
+}
