@@ -7,7 +7,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::core::errors::CoreError;
+use crate::core::{errors::CoreError, installers};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,6 +18,9 @@ pub struct PluginManifest {
     pub api_version: String,
     pub game_id: String,
     pub permissions: Vec<String>,
+    /// Id инсталлеров ядра в порядке участия (см. `core::installers`). Пустой массив = `data-hoist` + `basic`.
+    #[serde(default)]
+    pub installers: Vec<String>,
 }
 
 pub const CORE_PLUGIN_API_VERSION: &str = "1.0.0";
@@ -120,6 +123,11 @@ pub fn validate_manifest(manifest: &PluginManifest) -> Result<(), CoreError> {
     {
         return Err(CoreError::PluginPermissionDenied);
     }
+    for id in &manifest.installers {
+        if !installers::installer_id_is_valid(id) {
+            return Err(CoreError::PluginInvalidManifest);
+        }
+    }
     Ok(())
 }
 
@@ -136,8 +144,10 @@ pub fn plugin_root() -> PathBuf {
 pub fn run_smoke_test(manifest: &PluginManifest, archive_path: &str) -> Result<SmokeResult, CoreError> {
     let detect_game_ok = detect_game(manifest, vec!["C:/Games/PilotGame".into()])?.detected;
     let parse_mod_ok = parse_mod(manifest, archive_path)?.supported;
-    let plan_install_ok = !plan_install(manifest, archive_path, "mod_sample")?.actions.is_empty();
-    let plan_deploy_ok = !plan_deploy(manifest, "default-profile", "mod_sample")?.entries.is_empty();
+    plan_install(manifest, archive_path, "mod_sample")?;
+    let plan_install_ok = true;
+    let sample_files = vec![("Data/pilot.esp".to_string(), "sha256:smoke".to_string())];
+    let plan_deploy_ok = plan_deploy_from_staging("mod_sample", &sample_files).is_ok();
     let validate_ok = validate(manifest, archive_path)?.ok;
 
     Ok(SmokeResult {
@@ -174,8 +184,7 @@ pub fn detect_game(manifest: &PluginManifest, candidates: Vec<String>) -> Result
 
 pub fn parse_mod(_manifest: &PluginManifest, archive_path: &str) -> Result<ParseModResult, CoreError> {
     run_hook_with_timeout(Duration::from_secs(10), || {
-        let normalized = archive_path.to_lowercase();
-        let supported = normalized.ends_with(".zip") || normalized.ends_with(".7z");
+        let supported = crate::core::archive_ext::path_looks_like_mod_archive(std::path::Path::new(archive_path));
         Ok(ParseModResult {
             mod_type: if supported {
                 "loose-files".to_string()
@@ -198,30 +207,37 @@ pub fn parse_mod(_manifest: &PluginManifest, archive_path: &str) -> Result<Parse
     })
 }
 
-pub fn plan_install(_manifest: &PluginManifest, archive_path: &str, mod_id: &str) -> Result<InstallPlan, CoreError> {
+/// Plugin-level install steps (paths relative to staging mod root). Empty = rely on core installer chain only.
+pub fn plan_install(_manifest: &PluginManifest, archive_path: &str, _mod_id: &str) -> Result<InstallPlan, CoreError> {
     run_hook_with_timeout(Duration::from_secs(10), || {
         if archive_path.contains("..") {
             return Err(CoreError::PluginInvalidPlan);
         }
-        Ok(InstallPlan {
-            actions: vec![InstallAction {
-                kind: "copy".to_string(),
-                source: archive_path.to_string(),
-                destination: format!("mods/{mod_id}"),
-            }],
-        })
+        Ok(InstallPlan { actions: vec![] })
     })
 }
 
-pub fn plan_deploy(_manifest: &PluginManifest, _profile_id: &str, mod_id: &str) -> Result<DeployPlan, CoreError> {
+/// Build deploy plan from the **final** staging file list (after extract + installer chain + `plan_install` actions).
+pub fn plan_deploy_from_staging(mod_id: &str, files: &[(String, String)]) -> Result<DeployPlan, CoreError> {
     run_hook_with_timeout(Duration::from_secs(10), || {
-        Ok(DeployPlan {
-            entries: vec![DeployEntry {
-                target_path: "Data/pilot.esp".to_string(),
+        if files.is_empty() {
+            return Err(CoreError::PluginInvalidPlan);
+        }
+        let mut entries = Vec::new();
+        for (rel, _) in files {
+            if rel.contains("..") {
+                return Err(CoreError::PluginInvalidPlan);
+            }
+            let rel_norm = rel.replace('\\', "/");
+            entries.push(DeployEntry {
+                target_path: rel_norm.clone(),
                 winner_mod_id: mod_id.to_string(),
-                source_path: format!("mods/{mod_id}/pilot.esp"),
+                source_path: format!("<staging>/{mod_id}/{rel_norm}"),
                 strategy: "copy".to_string(),
-            }],
+            });
+        }
+        Ok(DeployPlan {
+            entries,
             conflict_candidates: vec![],
             post_deploy_hooks: vec![],
         })
@@ -277,6 +293,23 @@ mod tests {
     use super::*;
 
     #[test]
+    fn rejects_unknown_installer_id() {
+        let manifest = PluginManifest {
+            id: "com.jb.test".into(),
+            name: "Test".into(),
+            version: "0.1.0".into(),
+            api_version: "1.0.0".into(),
+            game_id: "pilot-game".into(),
+            permissions: vec!["game.read".into(), "mods.install".into(), "deploy.plan".into()],
+            installers: vec!["not-a-real-installer".into()],
+        };
+        assert!(matches!(
+            validate_manifest(&manifest),
+            Err(CoreError::PluginInvalidManifest)
+        ));
+    }
+
+    #[test]
     fn validates_manifest_permissions() {
         let manifest = PluginManifest {
             id: "com.jb.test".into(),
@@ -285,6 +318,7 @@ mod tests {
             api_version: "1.0.0".into(),
             game_id: "pilot-game".into(),
             permissions: vec!["game.read".into(), "mods.install".into()],
+            installers: vec![],
         };
         let result = validate_manifest(&manifest);
         assert!(result.is_ok());
@@ -299,6 +333,7 @@ mod tests {
             api_version: "1.0.0".into(),
             game_id: "pilot-game".into(),
             permissions: vec!["game.read".into(), "mods.install".into(), "deploy.plan".into()],
+            installers: vec![],
         };
         let result = run_smoke_test(&manifest, "../unsafe.zip");
         assert!(matches!(result, Err(CoreError::PluginInvalidPlan)));

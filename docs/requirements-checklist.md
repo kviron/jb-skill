@@ -4,6 +4,8 @@
 
 This checklist tracks implementation alignment against the documentation set for MVP V1.
 
+**Автотесты и QA gates, завязанные на E2E/axe/CI:** см. [`testing-deferred.md`](testing-deferred.md) — пункты ниже в разделе «Quality Gates» считаются **deferred**, пока автотесты не восстановлены. Актуальный статус по модулям: [`pantheon-implementation-status.md`](pantheon-implementation-status.md).
+
 ## Backend
 
 - [ ] Core commands implement unified `ok/error` envelope (`core-use-cases.md`)
@@ -29,6 +31,8 @@ This checklist tracks implementation alignment against the documentation set for
 - [ ] Search debounce, lazy routes, and list virtualization are implemented (`ui-shell-plan.md`)
 
 ## Quality Gates (Release Blockers)
+
+**Deferred (автотесты):** см. [`testing-deferred.md`](testing-deferred.md).
 
 - [ ] E2E-01 Install
 - [ ] E2E-02 Conflict resolution

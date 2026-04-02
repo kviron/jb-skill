@@ -1,14 +1,13 @@
 {
-  "name": "appsdesktop",
+  "name": "pantheon-desktop",
   "version": "0.1.0",
-  "description": "",
+  "description": "Pantheon mod manager (Tauri + Solid)",
   "type": "module",
   "scripts": {
     "start": "vite",
     "dev": "panda codegen && panda cssgen --outfile src/styled-system/styles.css && vite",
     "build": "panda codegen && panda cssgen --outfile src/styled-system/styles.css && vite build",
     "serve": "vite preview",
-    "test:e2e": "playwright test",
     "tauri": "tauri dev",
     "panda:codegen": "panda codegen",
     "panda:cssgen": "panda cssgen --outfile src/styled-system/styles.css"
@@ -17,7 +16,9 @@
   "dependencies": {
     "@ark-ui/solid": "^5.35.0",
     "@pandacss/dev": "^1.9.1",
+    "@tanstack/solid-virtual": "^3.13.23",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-opener": "^2",
     "i18next": "^25.10.10",
     "lucide-solid": "^1.7.0",
@@ -25,8 +26,6 @@
     "solid-js": "^1.9.3"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.1",
-    "@playwright/test": "^1.58.2",
     "@tauri-apps/cli": "^2",
     "typescript": "~5.6.2",
     "vite": "^6.0.3",

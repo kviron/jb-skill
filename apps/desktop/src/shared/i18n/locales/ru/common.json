@@ -1,5 +1,5 @@
 {
-  "appName": "JB Mod Manager",
+  "appName": "Pantheon",
   "loadingScreen": "Загрузка экрана...",
   "skipToContent": "Перейти к контенту",
   "activeThemeLabel": "Активная тема",
@@ -11,6 +11,7 @@
   "conflictsLabel": "Конфликты",
   "noConflictsYet": "Конфликтов пока нет",
   "install": "Установить",
+  "cancel": "Отмена",
   "installing": "Установка...",
   "enable": "Включить",
   "disable": "Выключить",
@@ -24,5 +25,9 @@
   "themeToggleAria": "Переключить тему интерфейса",
   "menuExpand": "Развернуть меню",
   "menuCollapse": "Свернуть меню",
-  "profileCurrent": "Текущий профиль"
+  "profileCurrent": "Текущий профиль",
+  "windowFrameControlsAria": "Окно",
+  "windowMinimize": "Свернуть",
+  "windowMaximize": "Развернуть или восстановить",
+  "windowClose": "Закрыть"
 }

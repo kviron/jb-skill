@@ -13,9 +13,9 @@
 
 ## Gaps
 
-- Нужен прогон `axe` в CI на реальном dev-server (тест `apps/desktop/e2e/a11y.spec.ts` добавлен).
+- Автоматический прогон `axe` в CI **отложен** (см. [`testing-deferred.md`](testing-deferred.md)); ранее планировался тест в `apps/desktop/e2e/`, каталог удалён.
 - Нужна ручная проверка screen-reader announce для всех `operation.failed` payload-вариантов.
 
 ## Verdict
 
-MVP V1 соответствует базовой доступности shell-уровня; automated a11y baseline внедрен, требуется CI-интеграция и ручной SR smoke.
+MVP V1 соответствует базовой доступности shell-уровня; автоматизированный a11y baseline в CI отложен до отдельной фазы; рекомендуется периодический ручной SR smoke.

@@ -1,14 +1,19 @@
 import { For, Show, Suspense, createEffect, createMemo, createSignal, lazy, onCleanup, onMount } from "solid-js";
 import { useTranslation } from "solid-i18next";
-import { Command } from "lucide-solid";
+import { open } from "@tauri-apps/plugin-dialog";
 import {
+  coreCancelModInstallSession,
+  coreFinalizeModInstall,
   coreGetConflicts,
-  coreInstallModFromArchive,
   coreListMods,
+  corePrepareModInstall,
   coreRemoveMod,
+  coreReorderModPriority,
   coreSetModEnabled,
   coreSwitchProfile,
   type ConflictRecord,
+  type FomodSelections,
+  type FomodWizardPayload,
   type ModRecord,
   unwrapApiResponse,
 } from "./shared/api/core";
@@ -17,8 +22,9 @@ import { subscribeDomainEvents } from "./shared/events/subscriptions";
 import { css, cx } from "./styled-system/css";
 import { UiPanel, UiSideNavItem, UiStatusBar } from "./shared/ui/primitives";
 import { navIcons, type NavIconName } from "./shared/ui/icons";
-import { ThemeSwitchButton, SidebarCollapseButton } from "./features";
+import { FomodWizardDialog, ThemeSwitchButton, SidebarCollapseButton } from "./features";
 import { ProfileBadge } from "./entities";
+import { ShellTitleBar } from "./widgets/shell-title-bar";
 
 type AppPage = "game-overview" | "profiles" | "mods" | "conflicts" | "operations" | "settings";
 const GameOverviewPage = lazy(() => import("./pages/game-overview/ui/GameOverviewPage").then((m) => ({ default: m.GameOverviewPage })));
@@ -31,7 +37,7 @@ const SettingsPage = lazy(() => import("./pages/settings/ui/SettingsPage").then(
 const appShellClass = css({
   display: "grid",
   gridTemplateColumns: "260px 1fr",
-  gridTemplateRows: "1fr auto",
+  gridTemplateRows: "auto 1fr auto",
   minH: "100vh",
   h: "100vh",
   bg: "bg.canvas",
@@ -43,7 +49,7 @@ const skipLinkClass = css({
   position: "absolute",
   left: "-9999px",
   top: "2",
-  zIndex: 10,
+  zIndex: 20,
   px: "3",
   py: "2",
   bg: "accent.default",
@@ -52,12 +58,13 @@ const skipLinkClass = css({
   borderRadius: "none",
   _focusVisible: {
     left: "2",
+    top: "10",
   },
 });
 
 const sidebarClass = css({
   gridColumn: "1",
-  gridRow: "1",
+  gridRow: "2",
   bg: "bg.sidebar",
   borderRightWidth: "1px",
   borderRightStyle: "solid",
@@ -181,7 +188,7 @@ const sidebarFooterCollapsedClass = css({
 
 const contentStackClass = css({
   gridColumn: "2",
-  gridRow: "1",
+  gridRow: "2",
   display: "flex",
   flexDirection: "column",
   minW: "0",
@@ -191,7 +198,7 @@ const contentStackClass = css({
 
 const statusBarFullWidthClass = css({
   gridColumn: "1 / -1",
-  gridRow: "2",
+  gridRow: "3",
 });
 
 const contentHeaderClass = css({
@@ -240,9 +247,14 @@ function App() {
   const [lastError, setLastError] = createSignal<string | null>(null);
 
   const [installing, setInstalling] = createSignal(false);
+  const [fomodDialog, setFomodDialog] = createSignal<{
+    sessionId: string;
+    wizard: FomodWizardPayload;
+  } | null>(null);
   const [switchingProfile, setSwitchingProfile] = createSignal(false);
   const [removingModId, setRemovingModId] = createSignal<string | null>(null);
   const [togglingModId, setTogglingModId] = createSignal<string | null>(null);
+  const [reorderingModId, setReorderingModId] = createSignal<string | null>(null);
 
   const filteredMods = createMemo(() =>
     mods().filter((item) => item.name.toLowerCase().includes(debouncedModSearch().toLowerCase())),
@@ -253,8 +265,39 @@ function App() {
   };
 
   async function loadMods() {
-    const response = await coreListMods(activeGameId());
+    const response = await coreListMods(activeGameId(), activeProfileId());
     setMods(unwrapApiResponse(response));
+  }
+
+  async function pickArchive() {
+    const path = await open({
+      multiple: false,
+      filters: [{ name: "Zip", extensions: ["zip"] }],
+    });
+    if (typeof path === "string") {
+      setModArchivePath(path);
+    }
+  }
+
+  async function reorderMod(item: ModRecord, moveUp: boolean) {
+    if (reorderingModId()) return;
+    setReorderingModId(item.id);
+    try {
+      setLastError(null);
+      unwrapApiResponse(
+        await coreReorderModPriority({
+          profileId: activeProfileId(),
+          modId: item.id,
+          moveUp,
+        }),
+      );
+      await Promise.all([loadMods(), loadConflicts()]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Reorder failed";
+      setLastError(message);
+    } finally {
+      setReorderingModId(null);
+    }
   }
 
   async function loadConflicts() {
@@ -263,18 +306,25 @@ function App() {
   }
 
   async function installMod() {
-    if (!modArchivePath().trim() || installing()) return;
+    if (!modArchivePath().trim() || installing() || fomodDialog()) return;
     setInstalling(true);
     try {
       setLastError(null);
+      const prep = unwrapApiResponse(
+        await corePrepareModInstall({ archivePath: modArchivePath() }),
+      );
+      if (prep.kind === "fomod" && prep.wizard) {
+        setFomodDialog({ sessionId: prep.sessionId, wizard: prep.wizard });
+        return;
+      }
       unwrapApiResponse(
-        await coreInstallModFromArchive({
+        await coreFinalizeModInstall({
           gameId: activeGameId(),
           profileId: activeProfileId(),
-          archivePath: modArchivePath(),
+          sessionId: prep.sessionId,
+          fomodSelections: null,
         }),
       );
-      // Command envelope is validated through unwrap helpers in loaders.
       appendLog(t("pages:logModInstalled"));
       setModArchivePath("");
       await Promise.all([loadMods(), loadConflicts()]);
@@ -284,6 +334,45 @@ function App() {
       appendLog(t("pages:logInstallErrorPrefix", { message }));
     } finally {
       setInstalling(false);
+    }
+  }
+
+  async function confirmFomodInstall(selections: FomodSelections) {
+    const ctx = fomodDialog();
+    if (!ctx) return;
+    setInstalling(true);
+    try {
+      setLastError(null);
+      unwrapApiResponse(
+        await coreFinalizeModInstall({
+          gameId: activeGameId(),
+          profileId: activeProfileId(),
+          sessionId: ctx.sessionId,
+          fomodSelections: selections,
+        }),
+      );
+      setFomodDialog(null);
+      appendLog(t("pages:logModInstalled"));
+      setModArchivePath("");
+      await Promise.all([loadMods(), loadConflicts()]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t("pages:installErrorFallback");
+      setLastError(message);
+      appendLog(t("pages:logInstallErrorPrefix", { message }));
+    } finally {
+      setInstalling(false);
+    }
+  }
+
+  async function cancelFomodInstall() {
+    const ctx = fomodDialog();
+    if (!ctx) return;
+    const sessionId = ctx.sessionId;
+    setFomodDialog(null);
+    try {
+      unwrapApiResponse(await coreCancelModInstallSession({ sessionId }));
+    } catch {
+      /* session folder may already be gone */
     }
   }
 
@@ -379,11 +468,13 @@ function App() {
         {t("common:skipToContent")}
       </a>
 
+      <ShellTitleBar />
+
       <aside class={cx(sidebarClass, isSidebarCollapsed() ? sidebarCollapsedClass : "")} aria-label={t("navigation:mainNavigationAria")}>
         <div class={cx(sidebarHeaderClass, isSidebarCollapsed() ? sidebarHeaderCollapsedClass : "")}>
           <div class={cx(sidebarBrandClass, isSidebarCollapsed() ? sidebarBrandCollapsedClass : "")}>
             <span class={iconWrapClass} aria-hidden="true">
-              <Command size={16} strokeWidth={1.8} />
+              <img src="/pantheon-mark.svg" width={22} height={22} alt="" />
             </span>
             <Show when={!isSidebarCollapsed()}>
               <h1 class={sidebarTitleClass}>{t("common:appName")}</h1>
@@ -466,14 +557,18 @@ function App() {
               modArchivePath={modArchivePath()}
               modSearch={modSearch()}
               mods={filteredMods()}
-              installing={installing()}
+              installing={installing() || fomodDialog() !== null}
               togglingModId={togglingModId()}
               removingModId={removingModId()}
+              reorderingModId={reorderingModId()}
               onArchivePathInput={setModArchivePath}
               onSearchInput={setModSearch}
               onInstall={installMod}
               onToggle={toggleMod}
               onRemove={removeMod}
+              onPickArchive={pickArchive}
+              onReorderUp={(item) => void reorderMod(item, true)}
+              onReorderDown={(item) => void reorderMod(item, false)}
             />
           </Show>
 
@@ -502,6 +597,16 @@ function App() {
           <span>{t("common:conflictsLabel")}: {conflicts().length}</span>
         </div>
       </UiStatusBar>
+
+      <Show when={fomodDialog()}>
+        {(ctx) => (
+          <FomodWizardDialog
+            wizard={ctx().wizard}
+            onConfirm={(sel) => void confirmFomodInstall(sel)}
+            onCancel={() => void cancelFomodInstall()}
+          />
+        )}
+      </Show>
     </main>
   );
 }

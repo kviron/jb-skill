@@ -1,5 +1,9 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import solid from "vite-plugin-solid";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST || "127.0.0.1";
@@ -7,6 +11,14 @@ const host = process.env.TAURI_DEV_HOST || "127.0.0.1";
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [solid()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        splash: resolve(__dirname, "splash.html"),
+      },
+    },
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

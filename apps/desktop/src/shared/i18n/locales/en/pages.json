@@ -4,6 +4,10 @@
   "modsArchiveLabel": "Mod archive",
   "modsSearchLabel": "Search mods",
   "modsSearchPlaceholder": "Enter mod name",
+  "modsBrowse": "Browse…",
+  "modMoveUp": "Up",
+  "modMoveDown": "Down",
+  "modsEmpty": "No mods in this profile yet.",
   "modEntry": "Mod Entry",
   "profilesTitle": "Profiles",
   "profilesSubtitle": "Manage active profile and environment switching",
@@ -34,5 +38,8 @@
   "installErrorFallback": "Installation error",
   "stateErrorFallback": "Mod state update error",
   "removeErrorFallback": "Removal error",
-  "profileSwitchErrorFallback": "Profile switch error"
+  "profileSwitchErrorFallback": "Profile switch error",
+  "fomodWizardSubtitle": "Choose install options for this mod.",
+  "fomodConfirmInstall": "Install with selected options",
+  "fomodValidationError": "Please fix your selections (each required group must have a valid choice)."
 }

@@ -34,19 +34,33 @@
 
 ## `mods`
 
+Метаданные установленного мода (глобально на игру). Включение и порядок **на профиль** хранятся в `profile_mods`.
+
 - `id TEXT PRIMARY KEY`
 - `game_id TEXT NOT NULL REFERENCES games(id)`
 - `name TEXT NOT NULL`
 - `version TEXT`
 - `archive_path TEXT NOT NULL`
-- `enabled INTEGER NOT NULL DEFAULT 1`
-- `priority INTEGER NOT NULL DEFAULT 0`
 - `installed_at TEXT NOT NULL`
 
 Индексы:
 
 - `idx_mods_game_id`
-- `idx_mods_game_priority` (`game_id`, `priority DESC`)
+
+## `profile_mods`
+
+Состояние мода в контексте профиля (миграция v4).
+
+- `profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE`
+- `mod_id TEXT NOT NULL REFERENCES mods(id) ON DELETE CASCADE`
+- `enabled INTEGER NOT NULL DEFAULT 1`
+- `priority INTEGER NOT NULL DEFAULT 0`
+- `PRIMARY KEY (profile_id, mod_id)`
+
+Индексы:
+
+- `idx_profile_mods_profile`
+- при необходимости — по `(profile_id, priority DESC)`
 
 ## `mod_files`
 

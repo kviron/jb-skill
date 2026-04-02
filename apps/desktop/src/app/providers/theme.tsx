@@ -15,11 +15,17 @@ export function ThemeProvider(props: ParentProps) {
   createEffect(() => {
     const activeTheme = theme();
     document.documentElement.dataset.theme = activeTheme;
-    localStorage.setItem("jb-skill.theme", activeTheme);
+    localStorage.setItem("pantheon.theme", activeTheme);
   });
 
   createEffect(() => {
-    const savedTheme = localStorage.getItem("jb-skill.theme");
+    const legacy = localStorage.getItem("jb-skill.theme");
+    if (legacy === "dark" || legacy === "light") {
+      if (!localStorage.getItem("pantheon.theme")) {
+        localStorage.setItem("pantheon.theme", legacy);
+      }
+    }
+    const savedTheme = localStorage.getItem("pantheon.theme");
     if (savedTheme === "dark" || savedTheme === "light") {
       setTheme(savedTheme);
     }

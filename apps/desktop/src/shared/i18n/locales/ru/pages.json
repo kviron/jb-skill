@@ -4,6 +4,10 @@
   "modsArchiveLabel": "Архив мода",
   "modsSearchLabel": "Поиск модов",
   "modsSearchPlaceholder": "Введите имя мода",
+  "modsBrowse": "Обзор…",
+  "modMoveUp": "Выше",
+  "modMoveDown": "Ниже",
+  "modsEmpty": "В этом профиле пока нет модов.",
   "modEntry": "Запись мода",
   "profilesTitle": "Профили",
   "profilesSubtitle": "Управление активным профилем и переключением окружений",
@@ -34,5 +38,8 @@
   "installErrorFallback": "Ошибка установки",
   "stateErrorFallback": "Ошибка изменения состояния мода",
   "removeErrorFallback": "Ошибка удаления",
-  "profileSwitchErrorFallback": "Ошибка переключения профиля"
+  "profileSwitchErrorFallback": "Ошибка переключения профиля",
+  "fomodWizardSubtitle": "Выберите варианты установки для этого мода.",
+  "fomodConfirmInstall": "Установить с выбранными опциями",
+  "fomodValidationError": "Исправьте выбор: в каждой обязательной группе должен быть допустимый вариант."
 }

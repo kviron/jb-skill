@@ -118,6 +118,32 @@ const MIGRATIONS: &[Migration] = &[
         ALTER TABLE transaction_steps ADD COLUMN error_code TEXT;
         "#,
     },
+    Migration {
+        version: 4,
+        name: "004_profile_mods",
+        sql: r#"
+        CREATE TABLE IF NOT EXISTS profile_mods (
+          profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+          mod_id TEXT NOT NULL REFERENCES mods(id) ON DELETE CASCADE,
+          enabled INTEGER NOT NULL DEFAULT 1,
+          priority INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (profile_id, mod_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_profile_mods_profile ON profile_mods(profile_id);
+        CREATE INDEX IF NOT EXISTS idx_profile_mods_profile_pri ON profile_mods(profile_id, priority DESC);
+
+        INSERT OR IGNORE INTO profile_mods (profile_id, mod_id, enabled, priority)
+        SELECT p.id, m.id, m.enabled, m.priority
+        FROM mods m
+        INNER JOIN profiles p ON p.game_id = m.game_id;
+
+        -- DROP COLUMN cannot run while an index still references the column (001_initial).
+        DROP INDEX IF EXISTS idx_mods_game_priority;
+
+        ALTER TABLE mods DROP COLUMN enabled;
+        ALTER TABLE mods DROP COLUMN priority;
+        "#,
+    },
 ];
 
 pub struct CoreDb {

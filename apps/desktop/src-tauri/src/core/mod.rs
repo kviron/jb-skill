@@ -1,9 +1,14 @@
 pub mod app_state;
+pub mod archive_ext;
 pub mod commands;
 pub mod contracts;
 pub mod db;
 pub mod errors;
 pub mod events;
+pub mod fomod;
+pub mod fs_ops;
+pub mod install_session;
+pub mod installers;
 pub mod plugins;
 pub mod tx;
 pub mod use_cases;

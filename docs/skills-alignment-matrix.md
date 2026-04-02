@@ -8,6 +8,7 @@
 
 | Документ | Ключевые skills |
 |---|---|
+| `docs/pantheon-implementation-status.md` | сводный статус; skills по областям см. строки ниже |
 | `docs/plugin-api-v1.md` | `plugin-structure`, `tauri-command`, `rust-best-practices`, `best-practices` |
 | `docs/domain-events.md` | `tauri-v2`, `tauri-command`, `solidjs-patterns`, `best-practices` |
 | `docs/deploy-manifest.md` | `rust-best-practices`, `sqlite-database-expert`, `performance`, `best-practices` |

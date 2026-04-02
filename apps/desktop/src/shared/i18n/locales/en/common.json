@@ -1,5 +1,5 @@
 {
-  "appName": "JB Mod Manager",
+  "appName": "Pantheon",
   "loadingScreen": "Loading screen...",
   "skipToContent": "Skip to content",
   "activeThemeLabel": "Active theme",
@@ -11,6 +11,7 @@
   "conflictsLabel": "Conflicts",
   "noConflictsYet": "No conflicts yet",
   "install": "Install",
+  "cancel": "Cancel",
   "installing": "Installing...",
   "enable": "Enable",
   "disable": "Disable",
@@ -24,5 +25,9 @@
   "themeToggleAria": "Toggle interface theme",
   "menuExpand": "Expand menu",
   "menuCollapse": "Collapse menu",
-  "profileCurrent": "Current profile"
+  "profileCurrent": "Current profile",
+  "windowFrameControlsAria": "Window",
+  "windowMinimize": "Minimize",
+  "windowMaximize": "Maximize or restore",
+  "windowClose": "Close"
 }

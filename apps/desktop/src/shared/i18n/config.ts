@@ -11,7 +11,7 @@ import settingsRu from "./locales/ru/settings.json";
 
 export type AppLanguage = "ru" | "en";
 
-const LANGUAGE_STORAGE_KEY = "jb-skill.language";
+const LANGUAGE_STORAGE_KEY = "pantheon.language";
 const DEFAULT_LANGUAGE: AppLanguage = "ru";
 
 const resources = {
@@ -40,7 +40,14 @@ function detectInitialLanguage(): AppLanguage {
     return DEFAULT_LANGUAGE;
   }
 
-  const storedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  let storedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (!storedLanguage) {
+    const legacy = localStorage.getItem("jb-skill.language");
+    if (isAppLanguage(legacy)) {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, legacy);
+      storedLanguage = legacy;
+    }
+  }
   if (isAppLanguage(storedLanguage)) {
     return storedLanguage;
   }

@@ -4,5 +4,6 @@
   "version": "0.1.0",
   "apiVersion": "1.0.0",
   "gameId": "pilot-game",
-  "permissions": ["game.read", "mods.install", "deploy.plan", "mods.validate"]
+  "permissions": ["game.read", "mods.install", "deploy.plan", "mods.validate"],
+  "installers": ["data-hoist", "basic"]
 }

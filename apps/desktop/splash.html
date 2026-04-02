@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Pantheon</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0f1115; color: #e6e8eb; font-family: system-ui, sans-serif; }
+      #splash-root { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.25rem; }
+      .mark-wrap { animation: breathe 2.2s ease-in-out infinite; }
+      @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.92; } }
+      @media (prefers-reduced-motion: reduce) {
+        .mark-wrap { animation: none; }
+      }
+      .ring {
+        width: 44px; height: 44px; border-radius: 999px;
+        border: 3px solid rgba(155, 126, 234, 0.35);
+        border-top-color: #5b8cff;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        .ring { animation: none; border-color: rgba(155, 126, 234, 0.6); }
+      }
+      .label { font-size: 13px; color: #8b9199; letter-spacing: 0.04em; }
+    </style>
+  </head>
+  <body>
+    <div id="splash-root"></div>
+    <script type="module" src="/src/splash.tsx"></script>
+  </body>
+</html>

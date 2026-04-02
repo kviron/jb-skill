@@ -1,6 +1,8 @@
 use serde::Serialize;
 use serde_json::Value;
 
+use super::fomod::FomodWizardPayload;
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApiResponse<T> {
@@ -49,6 +51,15 @@ pub struct InstallResult {
     pub operation_id: String,
     pub mod_id: String,
     pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrepareModInstallResult {
+    pub session_id: String,
+    /// `"plain"` | `"fomod"`
+    pub kind: String,
+    pub wizard: Option<FomodWizardPayload>,
 }
 
 #[derive(Debug, Clone, Serialize)]
