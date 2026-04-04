@@ -16,16 +16,16 @@ export async function subscribeDomainEvents(appendLog: (entry: string) => void):
     });
 
   return Promise.all([
-    withEvent("install.will-start"),
-    withEvent("install.did-finish"),
-    withEvent("deploy.will-start"),
-    withEvent("deploy.did-finish"),
-    withEvent("profile.will-change"),
-    withEvent("profile.did-change"),
-    withEvent("conflicts.recalculated"),
-    listen<DomainEvent>("operation.failed", (event) => {
+    withEvent("install:will-start"),
+    withEvent("install:did-finish"),
+    withEvent("deploy:will-start"),
+    withEvent("deploy:did-finish"),
+    withEvent("profile:will-change"),
+    withEvent("profile:did-change"),
+    withEvent("conflicts:recalculated"),
+    listen<DomainEvent>("operation:failed", (event) => {
       const payload = event.payload?.payload as { message?: string; errorCode?: string } | undefined;
-      appendLog(`operation.failed [${payload?.errorCode ?? "UNKNOWN"}] ${payload?.message ?? ""}`.trim());
+      appendLog(`operation:failed [${payload?.errorCode ?? "UNKNOWN"}] ${payload?.message ?? ""}`.trim());
     }),
   ]);
 }
